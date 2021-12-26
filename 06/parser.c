@@ -2,9 +2,11 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "parser.h"
+
 #define LINE_MAX_BYTES 512
 
-FILE* fp;
+extern FILE* fp;
 
 int peek()
 {
@@ -34,7 +36,7 @@ void advance()
         c = getc(fp);
     }
 
-    if (c = '/' && peek()  == '/')
+    if (c == '/' && peek()  == '/')
     {
         goToNextLine = true;
     }
@@ -58,7 +60,7 @@ void process(char* line, int* n)
     char c = getc(fp);
     while(c != '\n' && c != EOF && *n < LINE_MAX_BYTES - 2)
     {
-        if (c == '/' && peek(c)  == '/')
+        if (c == '/' && peek()  == '/')
         {
             *n = startOfSpace;
             fseek(fp, -1, SEEK_CUR);
@@ -77,48 +79,8 @@ void process(char* line, int* n)
     line[*n] = '\0';
 }
 
-int main(int argc, char **argv)
+void parse()
 {
-    if(argc == 1)
-    {
-        printf("No assembly file provided\n");
-        return -1;
-    }
-    else if (argc > 2)
-    {
-        printf("Too many input arguments\n");
-        return -1;
-    }
-
-    char* pc = argv[1];
-    bool extensionFound = false;
-    while(*pc != '\0')
-    {
-        if(*pc == '.')
-        {
-            extensionFound = true;
-
-            if(strcmp(pc + 1, "asm") != 0)
-            {
-                printf("Incaptible file extension: .%s\n", pc + 1);
-                return -1;
-            }
-        }
-        ++pc;
-    }
-
-    if(!extensionFound)
-    {
-        printf("No file extension found\n");
-        return -1;
-    }
-
-    fp = fopen(argv[1], "r");
-    if(!fp)
-    {
-        printf("Could not open file %s\n", argv[1]);
-        return -1;
-    }
 
     char line[LINE_MAX_BYTES];
     int length;
@@ -131,9 +93,4 @@ int main(int argc, char **argv)
         }
         printf("extracted line: %s\n", line);
     }
-
-
-    fclose(fp);
-
-    return 0;
 }

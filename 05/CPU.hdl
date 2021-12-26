@@ -41,7 +41,77 @@ CHIP CPU {
     PARTS:
     // Put your code here:
 
-    //A-instruction or C-instruction
-    Mux16(a=instruction, b=OUTPUT FROM ALU, c=instruction[15]);
+    //is A-Instruction?
+    Not(in=instruction[15], out=isAInstr);
+
+    //select A-instruction or outALU
+    Mux16(a=outALU, b=instruction, sel=isAInstr, out=outMuxa);
+
+    //load into ARegister if instruction of first ddd is set
+    Or(a=isAInstr, b=instruction[5], out=loadA);
+    ARegister(in=outMuxa, load=loadA, out=outRegA, out[0..14]=addressM);
+
+    //if a bit of C-instruction is set load from Aregister
+    //if A-instruiction, always load from A
+    And(a=instruction[15], b=instruction[12], out=selAM);
+    Mux16(a=outRegA, b=inM, sel=selAM, out=AM);
+
+
+    // Dregister
+    And(a=instruction[15],b=instruction[4], out=loadD);
+    DRegister(in=outALU, load=loadD, out=outRegD);
+
+    // ALU
+
+    ALU(x=outRegD, y=AM,
+    zx=instruction[11],
+    nx=instruction[10],
+    zy=instruction[9],
+    ny=instruction[8],
+    f=instruction[7],
+    no=instruction[6],
+    out=outM, out=outALU, zr=zr, ng=ng);
+
+    // writeM?
+    And(a=instruction[15], b=instruction[3], out=writeM);
+
+    // jumps
+
+    DMux8Way(in=true, sel=instruction[0..2],
+             a=NULLinstr, b=JGTinstr, c=JEQinstr, d=JGEinstr,
+            e=JLTinstr, f=JNEinstr, g=JLEinstr, h=JMP);
+
+
+    // outALU !=0
+    Not(in=zr, out=notZr);
+
+    // outALU >= 0
+    Not(in=ng, out=notNg);
+
+    // outALU > 0
+    And(a=notNg, b=notZr, out=greaterZr);
+
+    // outALU <= 0
+    Not(in=greaterZr, out=lessEqZr);
+
+    And(a=JGTinstr, b=greaterZr, out=JGT);
+    And(a=JEQinstr, b=zr, out=JEQ);
+    And(a=JGEinstr, b=notNg, out=JGE);
+    And(a=JLTinstr, b=ng, out=JLT);
+    And(a=JNEinstr, b=notZr, out=JNE);
+    And(a=JLEinstr, b=lessEqZr, out=JLE);
+
+    Or8Way(in[0]=false, in[1]=JGT, in[2]=JEQ, in[3]=JGE, in[4]=JLT,
+           in[5]=JNE, in[6]=JLE, in[7]=JMP,
+            out=jumpAinstr);
+
+    And(a=jumpAinstr, b=instruction[15], out=jump);
+
+    // Program Counter
+
+    PC(in=outRegA, load=jump, inc=true, reset=reset, out[0..14]=pc);
+
+
+
 
 }
