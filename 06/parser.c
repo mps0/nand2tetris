@@ -8,7 +8,6 @@
 
 #define LINE_MAX_BYTES 512
 #define WORD_BIT_SIZE 16
-#define MAX_SYMBOL_LENGTH 100
 
 extern FILE* fREAD;
 extern FILE* fWRITE;
@@ -154,15 +153,13 @@ void decimalToBinary(int n, char* binary)
     binary = strrev(binary);
 }
 
-char* symbol()
+void symbol(char* sym)
 {
-    char* rval;
     switch(info.type)
     {
         case A_INSTRUCTION:
             int length = strlen(info.line);
-            rval = calloc(length, sizeof(char));
-            memcpy(rval, info.line + 1, length - 1);
+            memcpy(sym, info.line + 1, length - 1);
             break;
 
         case L_INSTRUCTION:
@@ -171,11 +168,9 @@ char* symbol()
             {
                 i++;
             }
-            rval = calloc(i, sizeof(char));
-            memcpy(rval, info.line + 1, i - 1);
+            memcpy(sym, info.line + 1, i - 1);
             break;
     }
-    return rval;
 }
 
 INSTRUCTION_TYPE instructionType(char firstByte)
@@ -231,8 +226,8 @@ void comp(char* c)
 void parseCinstruction(char* bin)
 {
     //todo
-    char d[MAX_SYMBOL_LENGTH] = {};
-    char c[MAX_SYMBOL_LENGTH] = {};
+    char d[MAX_SYMBOL_SIZE] = {};
+    char c[MAX_SYMBOL_SIZE] = {};
     char j[4] = {};
 
     //todo
@@ -295,7 +290,8 @@ void parse(bool firstPass)
                     {
                         //printf("PARSING A INSTRUCTION\n");
                         info = (Info){line, A_INSTRUCTION};
-                        char* sym = symbol();
+                        char sym[MAX_SYMBOL_SIZE] = {};
+                        symbol(sym);
 
                         int dec;
                         if(!(sym[0] == '-' || (sym[0] >= '0' && sym[0]<= '9')))
@@ -354,7 +350,9 @@ void parse(bool firstPass)
 
                     }
                     else {
-                        iaddEntry(symbol(), lineNumber + 1);
+                        char sym[MAX_SYMBOL_SIZE] = {};
+                        symbol(sym);
+                        iaddEntry(sym, lineNumber + 1);
                     }
                     break;
                 }
