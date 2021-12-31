@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
@@ -14,4 +16,6 @@ void advance();
 
 void process(char* line, int* n);
 
-void parse();
+void parse(bool firstPass);
+
+int decimalStringToInt(char* s);

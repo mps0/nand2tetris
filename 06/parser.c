@@ -4,18 +4,29 @@
 #include <stdlib.h>
 
 #include "parser.h"
+#include "code.h"
 
 #define LINE_MAX_BYTES 512
 #define WORD_BIT_SIZE 16
+#define MAX_SYMBOL_LENGTH 100
 
 extern FILE* fREAD;
 extern FILE* fWRITE;
+
+extern SymbolTable symbolTable;
 
 typedef enum {
     A_INSTRUCTION,
     C_INSTRUCTION,
     L_INSTRUCTION
 } INSTRUCTION_TYPE;
+
+typedef struct {
+    char* line;
+    INSTRUCTION_TYPE type;
+} Info;
+
+Info info;
 
 int peek()
 {
@@ -67,6 +78,7 @@ void process(char* line, int* n)
     *n = 0;
     int startOfSpace;
     char c = getc(fREAD);
+    bool seenNonSpace = false;
     while(c != '\n' && c != EOF && *n < LINE_MAX_BYTES - 2)
     {
         if (c == '/' && peek()  == '/')
@@ -76,15 +88,21 @@ void process(char* line, int* n)
             advance();
             break;
         }
-        else if (c == ' ')
+        else if (c != ' ')
+        {
+            seenNonSpace = true;
+        }
+        else if (c == ' ' && seenNonSpace)
         {
             startOfSpace = *n;
+            break;
         }
 
         line[*n] = c;
         ++(*n);
         c = getc(fREAD);
     }
+    //printf("placcing null at :%d\n", *n);
     line[*n] = '\0';
 }
 
@@ -136,178 +154,129 @@ void decimalToBinary(int n, char* binary)
     binary = strrev(binary);
 }
 
+char* symbol()
+{
+    char* rval;
+    switch(info.type)
+    {
+        case A_INSTRUCTION:
+            int length = strlen(info.line);
+            rval = calloc(length, sizeof(char));
+            memcpy(rval, info.line + 1, length - 1);
+            break;
+
+        case L_INSTRUCTION:
+            int i = 1;
+            while(info.line[i] != ')')
+            {
+                i++;
+            }
+            rval = calloc(i, sizeof(char));
+            memcpy(rval, info.line + 1, i - 1);
+            break;
+    }
+    return rval;
+}
+
 INSTRUCTION_TYPE instructionType(char firstByte)
 {
     switch(firstByte)
     {
         case '@' :
-            printf("@\n");
             return A_INSTRUCTION;
 
         case '(' :
-            printf("(\n");
             return L_INSTRUCTION;
 
         default :
-            printf("DEFAULT\n");
             return C_INSTRUCTION;
     }
 }
 
 
-typedef struct {
-    char dest[4];
-    char bits[4];
-} DMap;
-
-typedef struct {
-    char comp[7];
-    char bits[7];
-} CMap;
-
-typedef struct {
-    char jump[4];
-    char bits[4];
-} JMap;
-
-
-
-DMap dMap[7] =
-{
-    {"M", "001"},
-    {"D", "010"},
-    {"DM", "011"},
-    {"A", "100"},
-    {"AM", "101"},
-    {"AD", "110"},
-    {"ADM", "111"}
-};
-
-CMap cMap[18] =
-{
-    {"0", "101010"},
-    {"1", "111111"},
-    {"-1", "111010"},
-    {"D", "001100"},
-    {"X", "110000"},
-    {"!D", "001101"},
-    {"!X", "110001"},
-    {"-D", "001111"},
-    {"-X", "110011"},
-    {"D+1", "011111"},
-    {"X+1", "110111"},
-    {"D-1", "001110"},
-    {"X-1", "110010"},
-    {"D+X", "000010"},
-    {"D-X", "010011"},
-    {"X-D", "000111"},
-    {"D&A", "000000"},
-    {"D|A", "010101"},
-};
-
-JMap jMap[7] =
-{
-    {"JGT", "001"},
-    {"JEQ", "010"},
-    {"JGE", "011"},
-    {"JLT", "100"},
-    {"JNE", "101"},
-    {"JLE", "110"},
-    {"JMP", "111"},
-};
-
-char* dest(char* line)
+bool dest(char* d)
 {
     int eqLoc = 0;
-    while(line[eqLoc] != '=')
+    while(1)
+    {
+        if(info.line[eqLoc] == '=')
+        {
+        memcpy(d, info.line, eqLoc);
+        return false;
+        }
+        else if (info.line[eqLoc] == ';')
+        {
+        memcpy(d, info.line, eqLoc);
+        return true;
+        }
+        eqLoc++;
+    }
+}
+
+
+void comp(char* c)
+{
+    int eqLoc = 0;
+    while(info.line[eqLoc] != '=' && info.line[eqLoc] != ';')
     {
         eqLoc++;
     }
-    printf("EQLOC: %d\n", eqLoc);
-    char* rval = calloc(eqLoc + 1, sizeof(char));
-    memcpy(rval, line, eqLoc);
-    rval[eqLoc] = '\0';
-    return rval;
+    int length = strlen(info.line);
+    memcpy(c, info.line + eqLoc + 1, length - eqLoc - 1);
 }
 
 
-char* comp(char* line)
+
+
+void parseCinstruction(char* bin)
 {
-    int eqLoc = 0;
-    while(line[eqLoc] != '=')
+    //todo
+    char d[MAX_SYMBOL_LENGTH] = {};
+    char c[MAX_SYMBOL_LENGTH] = {};
+    char j[4] = {};
+
+    //todo
+    char jjj[4] = "000";
+    char ddd[4] = {};
+    char acccccc[8] = {};
+
+    bool isJump = dest(d);
+    if(isJump)
     {
-        //printf("line[eqLoc] = %c\n", line[eqLoc]);
-        //dest[eqLoc] = line[eqLoc];
-        eqLoc++;
+        compBin(d, acccccc);
+        comp(j);
+        jumpBin(j, jjj);
+        ddd[0] = '0';
+        ddd[1] = '0';
+        ddd[2] = '0';
     }
-
-    return line + eqLoc + 1;
-}
-
-char* destBin(char* d) {
-
-    char* rval = calloc(4, sizeof(char));
-    // get ddd
-    for(int i = 0; i < 7; i++) {
-        if(strcmp(d, dMap[i].dest) == 0)
-        {
-           memcpy(rval, dMap[i].bits, 4);
-           break;
-        }
-    }
-    return rval;
-}
-
-char* compBin(char* c)
-{
-
-    char* rval = calloc(7, sizeof(char));
-
-    // get cccccc
-    for(int i = 0; i < 18; i++) {
-        if(strcmp(c, cMap[i].comp) == 0)
-        {
-           memcpy(rval, cMap[i].bits, 7);
-           break;
-        }
-    }
-           return rval;
-}
-
-
-
-void parseCinstruction(char* line, char* bin)
-{
-
-    //remember to clean
-    char* d = dest(line);
-    printf("dest return: %s\n", d);
-    char* ddd = destBin(d);
-    printf("ddd: %s\n", ddd);
+    else
+    {
+    //printf("dest return: %s\n", d);
+    destBin(d, ddd);
+    //printf("ddd: %s\n", ddd);
 
     // get cccccc
     //char* RHS = line + eqLoc + 1;
-    char* c = comp(line);
-    printf("comp Returns: %s\n", c);
-    char* cccccc = compBin(c);
-    printf("cccccc: %s\n", ddd);
+    comp(c);
+    //printf("comp Returns: %s\n", c);
+    compBin(c, acccccc);
+    //printf("acccccc: %s\n", acccccc);
 
-
-    //TODO
-    char jjj[4] = "000";
-    // get jjj
-    //
-    char* res = strcat(cccccc, ddd);
+    }
+    char* res = strcat(acccccc, ddd);
     res = strcat(res, jjj);
-    memcpy(bin + 4, res, 15);
-    free(ddd);
-    free(cccccc);
+    memcpy(bin + 3, res, 15);
+
 }
 
-void parse()
+void parse(bool firstPass)
 {
+
+
     char line[LINE_MAX_BYTES];
     int length;
+        int lineNumber = -1;
     while(hasMoreLines())
     {
         advance();
@@ -317,40 +286,81 @@ void parse()
         }
 
         char bin[WORD_BIT_SIZE + 1];
-        bin[0] = '1';
-        bin[0] = '1';
-        bin[0] = '1';
         bin[16] = '\0';
-        printf("line: %s\n", line);
+        //printf("line: %s,test\n", line);
         switch(instructionType(line[0])) {
             case A_INSTRUCTION:
                 {
+                    if(!firstPass)
+                    {
+                        //printf("PARSING A INSTRUCTION\n");
+                        info = (Info){line, A_INSTRUCTION};
+                        char* sym = symbol();
 
-                    int dec = decimalStringToInt(line + 1);
-                    //printf("decString: %d", decString);
-                    decimalToBinary(dec, bin);
-                    //printf("converted line: %s\n", bin);
+                        int dec;
+                        if(!(sym[0] == '-' || (sym[0] >= '0' && sym[0]<= '9')))
+                        {
+                            if(!contains(sym))
+                            {
+                                //printf("ADDING SYMBOL: %s AT %d\n", sym, symbolTable.nextAddress);
+                                iaddEntry(sym, symbolTable.nextAddress);
+                                symbolTable.nextAddress++;
+                            }
+                            dec = getAddress(sym);
+                        }
+                        else
+                        {
+                            dec = decimalStringToInt(sym);
+                        }
+
+                        //printf("decString: %d", decString);
+                        decimalToBinary(dec, bin);
+        fputs(bin, fWRITE);
+        fputc('\n', fWRITE);
+                    }
+                    else
+                    {
+                        lineNumber++;
+                    }
                     break;
+
                 }
 
             case C_INSTRUCTION:
                 {
-                    printf("PARSING C INSTRUCTION\n");
-                    parseCinstruction(line, bin);
-            printf("bin: %s\n", bin);
+                    if(!firstPass)
+                    {
+                        bin[0] = '1';
+                        bin[1] = '1';
+                        bin[2] = '1';
+                        //printf("PARSING C INSTRUCTION\n");
+                        info = (Info){line, C_INSTRUCTION};
+                        parseCinstruction(bin);
+        fputs(bin, fWRITE);
+        fputc('\n', fWRITE);
+                    }
+                    else
+                    {
+                        lineNumber++;
+                    }
                     break;
                 }
 
             case L_INSTRUCTION:
                 {
+                    info = (Info){line, L_INSTRUCTION};
+                    if(!firstPass)
+                    {
 
+                    }
+                    else {
+                        iaddEntry(symbol(), lineNumber + 1);
+                    }
                     break;
                 }
         }
 
-        fputs(bin, fWRITE);
-        fputc('\n', fWRITE);
-
         //printf("extracted line: %s\n", line);
+        //printf("SYMBOL TABLE LENGTH: %d\n", symbolTable.length);
     }
 }
