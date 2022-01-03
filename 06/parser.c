@@ -105,10 +105,8 @@ void process(char* line, int* n)
     line[*n] = '\0';
 }
 
-// positive only
 int decimalStringToInt(char* s)
 {
-
     int length = strlen(s);
 
     int sum = 0;
@@ -146,7 +144,6 @@ void decimalToBinary(int n, char* binary)
     }
     for(int i = 0; i < WORD_BIT_SIZE - 1; ++i)
     {
-        //binary[15 - i] = n % 2 + 48;
         binary[i] = n % 2 + 48;
         n /= 2;
     }
@@ -188,7 +185,7 @@ INSTRUCTION_TYPE instructionType(char firstByte)
     }
 }
 
-
+//returns true if jump
 bool dest(char* d)
 {
     int eqLoc = 0;
@@ -196,18 +193,17 @@ bool dest(char* d)
     {
         if(info.line[eqLoc] == '=')
         {
-        memcpy(d, info.line, eqLoc);
-        return false;
+            memcpy(d, info.line, eqLoc);
+            return false;
         }
         else if (info.line[eqLoc] == ';')
         {
-        memcpy(d, info.line, eqLoc);
-        return true;
+            memcpy(d, info.line, eqLoc);
+            return true;
         }
         eqLoc++;
     }
 }
-
 
 void comp(char* c)
 {
@@ -220,17 +216,12 @@ void comp(char* c)
     memcpy(c, info.line + eqLoc + 1, length - eqLoc - 1);
 }
 
-
-
-
 void parseCinstruction(char* bin)
 {
-    //todo
     char d[MAX_SYMBOL_SIZE] = {};
     char c[MAX_SYMBOL_SIZE] = {};
     char j[4] = {};
 
-    //todo
     char jjj[4] = "000";
     char ddd[4] = {};
     char acccccc[8] = {};
@@ -247,31 +238,21 @@ void parseCinstruction(char* bin)
     }
     else
     {
-    //printf("dest return: %s\n", d);
-    destBin(d, ddd);
-    //printf("ddd: %s\n", ddd);
-
-    // get cccccc
-    //char* RHS = line + eqLoc + 1;
-    comp(c);
-    //printf("comp Returns: %s\n", c);
-    compBin(c, acccccc);
-    //printf("acccccc: %s\n", acccccc);
-
+        destBin(d, ddd);
+        comp(c);
+        compBin(c, acccccc);
     }
+
     char* res = strcat(acccccc, ddd);
     res = strcat(res, jjj);
     memcpy(bin + 3, res, 15);
-
 }
 
 void parse(bool firstPass)
 {
-
-
     char line[LINE_MAX_BYTES];
     int length;
-        int lineNumber = -1;
+    int lineNumber = -1;
     while(hasMoreLines())
     {
         advance();
@@ -282,14 +263,12 @@ void parse(bool firstPass)
 
         char bin[WORD_BIT_SIZE + 1];
         bin[16] = '\0';
-        //printf("line: %s,test\n", line);
+        info = (Info){line, A_INSTRUCTION};
         switch(instructionType(line[0])) {
             case A_INSTRUCTION:
                 {
                     if(!firstPass)
                     {
-                        //printf("PARSING A INSTRUCTION\n");
-                        info = (Info){line, A_INSTRUCTION};
                         char sym[MAX_SYMBOL_SIZE] = {};
                         symbol(sym);
 
@@ -298,7 +277,6 @@ void parse(bool firstPass)
                         {
                             if(!contains(sym))
                             {
-                                //printf("ADDING SYMBOL: %s AT %d\n", sym, symbolTable.nextAddress);
                                 iaddEntry(sym, symbolTable.nextAddress);
                                 symbolTable.nextAddress++;
                             }
@@ -309,17 +287,15 @@ void parse(bool firstPass)
                             dec = decimalStringToInt(sym);
                         }
 
-                        //printf("decString: %d", decString);
                         decimalToBinary(dec, bin);
-        fputs(bin, fWRITE);
-        fputc('\n', fWRITE);
+                        fputs(bin, fWRITE);
+                        fputc('\n', fWRITE);
                     }
                     else
                     {
                         lineNumber++;
                     }
                     break;
-
                 }
 
             case C_INSTRUCTION:
@@ -329,11 +305,9 @@ void parse(bool firstPass)
                         bin[0] = '1';
                         bin[1] = '1';
                         bin[2] = '1';
-                        //printf("PARSING C INSTRUCTION\n");
-                        info = (Info){line, C_INSTRUCTION};
                         parseCinstruction(bin);
-        fputs(bin, fWRITE);
-        fputc('\n', fWRITE);
+                        fputs(bin, fWRITE);
+                        fputc('\n', fWRITE);
                     }
                     else
                     {
@@ -344,12 +318,8 @@ void parse(bool firstPass)
 
             case L_INSTRUCTION:
                 {
-                    info = (Info){line, L_INSTRUCTION};
-                    if(!firstPass)
+                    if(firstPass)
                     {
-
-                    }
-                    else {
                         char sym[MAX_SYMBOL_SIZE] = {};
                         symbol(sym);
                         iaddEntry(sym, lineNumber + 1);
@@ -357,8 +327,5 @@ void parse(bool firstPass)
                     break;
                 }
         }
-
-        //printf("extracted line: %s\n", line);
-        //printf("SYMBOL TABLE LENGTH: %d\n", symbolTable.length);
     }
 }

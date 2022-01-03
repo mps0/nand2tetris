@@ -5,8 +5,6 @@
 #include "parser.h"
 #include "code.h"
 
-
-
 FILE* fREAD;
 FILE* fWRITE;
 
@@ -65,13 +63,12 @@ int main(int argc, char **argv)
         printf("Could not create output machine code file!\n");
         return -1;
     }
-    //printSymbolTable();
 
     parse(true);
     fseek(fREAD, 0, SEEK_SET);
     parse(false);
 
-    printSymbolTable();
+    //printSymbolTable();
 
     fclose(fREAD);
     fclose(fWRITE);
