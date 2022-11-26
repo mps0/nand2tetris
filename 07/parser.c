@@ -16,13 +16,13 @@ int peek()
 bool hasMoreLines()
 {
     char p = peek();
+    // skip over lines with just a new line char.
     while(p == '\n')
     {
         getc(fREAD);
         p = peek();
     }
-    printf("hasMoreLines, peek: %c, ascii: %d\n", p, p);
-    //if(peek() == EOF)
+
     if(p == EOF)
     {
         return false;
@@ -36,20 +36,15 @@ void advance()
     bool goToNextLine = false;
 
     char c = getc(fREAD);
-    //while(c == ' ')
-    //{
-    //    c = getc(fREAD);
-    //}
-
     if (c == '/' && peek()  == '/')
     {
         goToNextLine = true;
     }
-    //TODO
+    // can assume the VM code doesn't have leading spaces
+    // since it's generated, so just skip these lines.
     else if(isspace(c) != 0)
     {
         goToNextLine = true;
-
     }
 
     if(goToNextLine)
@@ -60,7 +55,6 @@ void advance()
         }
         if(hasMoreLines())
         {
-            printf("GOING TO NEXT LINE\n");
             advance();
         }
         return;
@@ -72,25 +66,17 @@ void setCurrentCommand()
 {
     char c = getc(fREAD);
 
-    //since these is VM code we can assume:
-    // - no extra leading spaces
-    // - no extra spcaces between commands & args
-    // - comments on their own lines
-
     //get command
-    char command[8]; //TODO
+    char command[7]; //fits "return"
     int n = 0;
     while(c != ' ' && c != '\n')
     {
-        printf("n: %d, c: %c\n", n, c);
         command[n] = c;
         c = getc(fREAD);
         n++;
     }
     command[n] = '\0';
     currCommand.type = getCommandTypeFromString(command);
-
-    printf("COMMAND: %s, currCommand.type: %d\n", command, currCommand.type);
 
     //get args (if needed)
     switch(currCommand.type)
@@ -106,25 +92,21 @@ void setCurrentCommand()
                 c = getc(fREAD);
                 while(c != ' ')
                 {
-                    printf("arg0 n: %d, c: %c\n", n, c);
                     currCommand.arg1[n] = c;
                     c = getc(fREAD);
                     n++;
                 }
                 currCommand.arg1[n] = '\0';
-                printf("done0\n");
 
                 n = 0;
                 c = getc(fREAD);
                 while(c != '\n')
                 {
-                    printf("arg1 n: %d, c: %c ascii: %u\n", n, c, c);
                     currCommand.arg2[n] = c;
                     c = getc(fREAD);
                     n++;
                 }
                 currCommand.arg2[n] = '\0';
-                printf("done1\n");
                 break;
             }
     }
@@ -162,7 +144,7 @@ CommandType commandType()
 
 void writeCurrentCommandAsComment()
 {
-    fputs("\\\\", fWRITE);
+    fputs("\\\\ ", fWRITE);
 
     switch(currCommand.type)
     {

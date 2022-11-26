@@ -6,8 +6,10 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define LINE_MAX_BYTES 512
-
+//since these is VM code we can assume:
+// - no extra leading spaces
+// - no extra spcaces between commands & args
+// - comments on their own lines
 
 extern FILE* fREAD;
 extern FILE* fWRITE;
@@ -28,28 +30,15 @@ typedef enum CommandType
 typedef struct
 {
     CommandType type;
-    char arg1[10]; ///TODO... how many bytes are really needed here?
-    char arg2[10]; ///TODO... how many bytes are really needed here?
+    char arg1[9]; //fits "constant"
+    char arg2[7]; //fits largest num string "-32768"
 } Command;
 
 int peek();
-
 bool hasMoreLines();
-
 void advance();
-void setCurrentCommand();
 
+void setCurrentCommand();
 CommandType commandType();
 CommandType getCommandTypeFromString(char* command);
-
-void arg1(char* rStr, int len);
-
 void writeCurrentCommandAsComment();
-
-
-
-
-
-
-
-

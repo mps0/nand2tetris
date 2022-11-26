@@ -70,7 +70,6 @@ int main(int argc, char* argv[])
         writeCurrentCommandAsComment();
     }
 
-
     fclose(fREAD);
     fclose(fWRITE);
 
