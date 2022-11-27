@@ -1,5 +1,6 @@
 /* parser.c */
 #include <ctype.h>
+#include <stdlib.h>
 
 #include "parser.h"
 
@@ -62,7 +63,7 @@ void advance()
     fseek(fREAD, -1, SEEK_CUR);
 }
 
-void setCurrentCommand()
+Command getCurrentCommand()
 {
     char c = getc(fREAD);
 
@@ -76,6 +77,8 @@ void setCurrentCommand()
         n++;
     }
     command[n] = '\0';
+
+    Command currCommand = {};
     currCommand.type = getCommandTypeFromString(command);
 
     //get args (if needed)
@@ -100,16 +103,20 @@ void setCurrentCommand()
 
                 n = 0;
                 c = getc(fREAD);
+                char arg2[7]; // big enough to fit smallest 16bit int
                 while(c != '\n')
                 {
-                    currCommand.arg2[n] = c;
+                    arg2[n] = c;
                     c = getc(fREAD);
                     n++;
                 }
-                currCommand.arg2[n] = '\0';
+                arg2[n] = '\0';
+                currCommand.arg2 = atoi(arg2);
                 break;
             }
     }
+
+    return currCommand;
 }
 
 CommandType getCommandTypeFromString(char* command)
@@ -142,30 +149,36 @@ CommandType commandType()
     return currCommand.type;
 }
 
-void writeCurrentCommandAsComment()
+void writeCommandAsComment(Command command)
 {
-    fputs("\\\\ ", fWRITE);
+    fputs("// ", fWRITE);
 
-    switch(currCommand.type)
+    switch(command.type)
     {
         case C_ARITHEMATIC:
-            fputs(currCommand.arg1, fWRITE);
+            fputs(command.arg1, fWRITE);
             break;
 
         case C_PUSH:
-            fputs("push", fWRITE);
-            fputs(" ", fWRITE);
-            fputs(currCommand.arg1, fWRITE);
-            fputs(" ", fWRITE);
-            fputs(currCommand.arg2, fWRITE);
-            break;
+            {
+                fputs("push", fWRITE);
+                fputs(" ", fWRITE);
+                fputs(command.arg1, fWRITE);
+                fputs(" ", fWRITE);
+                char buff[7];
+                fputs(itoa(command.arg2, buff, 10), fWRITE);
+                break;
+            }
         case C_POP:
-            fputs("pop", fWRITE);
-            fputs(" ", fWRITE);
-            fputs(currCommand.arg1, fWRITE);
-            fputs(" ", fWRITE);
-            fputs(currCommand.arg2, fWRITE);
-            break;
+            {
+                fputs("pop", fWRITE);
+                fputs(" ", fWRITE);
+                fputs(command.arg1, fWRITE);
+                fputs(" ", fWRITE);
+                char buff[7];
+                fputs(itoa(command.arg2, buff, 10), fWRITE);
+                break;
+            }
     }
     fputs("\n", fWRITE);
 }

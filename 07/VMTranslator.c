@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "parser.h"
+#include "codeWriter.h"
 
 FILE* fREAD;
 FILE* fWRITE;
@@ -62,13 +63,29 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    init();
     while(hasMoreLines())
     {
         advance();
 
-        setCurrentCommand();
-        writeCurrentCommandAsComment();
+        Command currCommand = getCurrentCommand();
+        writeCommandAsComment(currCommand);
+
+        switch(currCommand.type)
+        {
+
+            case C_ARITHEMATIC:
+                writeArithmetic(currCommand);
+                break;
+
+            case C_PUSH:
+            case C_POP:
+                writePushPop(currCommand);
+                break;
+
+        }
     }
+    finish();
 
     fclose(fREAD);
     fclose(fWRITE);
