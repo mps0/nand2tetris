@@ -57,16 +57,25 @@ void writePush(const Command command)
     }
     else
     {
-        // go to segment
-        writeAt(command.arg1);
-        // go to offset
-        char buff[9];
-        strncpy(buff, "M+", 2);
-        itoa(command.arg2, buff + 2, 10);
-        writeAssignment("A", buff);
-
-        // save the value into D
-        writeAssignment("D", "M");
+        if(command.arg2 == 0)
+        {
+            // go to segment
+            writeAt(command.arg1);
+            writeAssignment("A", "M");
+            // copy value
+            writeAssignment("D", "M");
+        }
+        else
+        {
+            char buff[7];
+            itoa(command.arg2, buff, 10);
+            writeAt(buff);
+            writeAssignment("D","A");
+            writeAt(command.arg1);
+            writeAssignment("D", "D+M");
+            writeAssignment("A", "D");
+            writeAssignment("D", "M");
+        }
 
         //push onto stack
         writeAt("SP");
@@ -74,7 +83,6 @@ void writePush(const Command command)
         writeAssignment("A", "M-1");
         writeAssignment("M", "D");
     }
-
 }
 
 void writePop(const Command command)
@@ -86,16 +94,35 @@ void writePop(const Command command)
     //now at SP -1 (last number) address...
     //save the value into D
     writeAssignment("D", "M");
-    //go to base segment address
-    writeAt(command.arg1);
-    // go to offset
-    char buff[9];
-    strncpy(buff, "M+", 2);
-    itoa(command.arg2, buff + 2, 10);
-    writeAssignment("A", buff);
-    // save value
-    writeAssignment("M","D");
 
+    if(command.arg2 == 0)
+    {
+        writeAt(command.arg1);
+        writeAssignment("A", "M");
+        writeAssignment("M","D");
+    }
+    else
+    {
+        //Save the value into R13
+        writeAt("R13");
+        writeAssignment("M","D");
+        char buff[7];
+        itoa(command.arg2, buff, 10);
+        // Save address into R14
+        writeAt(buff);
+        writeAssignment("D","A");
+        writeAt(command.arg1);
+        writeAssignment("D", "D+M");
+        writeAt("R14");
+        writeAssignment("M","D");
+
+        // Save value into segment + index
+        writeAt("R13");
+        writeAssignment("D", "M");
+        writeAt("R14");
+        writeAssignment("A","M");
+        writeAssignment("M","D");
+    }
 }
 
 ArithType getArithType(const Command command)
@@ -133,56 +160,81 @@ ArithType getArithType(const Command command)
 
 void writeArithmetic(const Command command)
 {
-    static int trueCount = 0;
-
     ArithType arithType = getArithType(command);
 
     switch(arithType)
     {
         case A_ADD:
-            // save y into D
-            writeAt("SP");
-
-            // decrement the SP here since the result only occupies 1 from 2
-            writeAssignment("M", "M-1");
-            writeAssignment("A", "M");
-            writeAssignment("D", "M");
-
-            // add D (y) to x
-            writeAssignment("A", "A-1");
-            writeAssignment("M", "M+D");
+            writeTwoInputOp("+");
             break;
 
         case A_SUB:
-            // save y into D
-            writeAt("SP");
-
-            // decrement the SP here since the result only occupies 1 from 2
-            writeAssignment("M", "M-1");
-            writeAssignment("A", "M");
-            writeAssignment("D", "M");
-
-            // add D (y) to x
-            writeAssignment("A", "A-1");
-            writeAssignment("M", "M-D");
+            writeTwoInputOp("-");
             break;
 
         case A_NEG:
-            writeAt("SP");
-            writeAssignment("A", "M-1");
-            writeAssignment("M", "-M");
+            writeOneInputOp("-");
             break;
 
         case A_EQ:
+            writeLogical("JEQ");
+            break;
+
         case A_GT:
+            writeLogical("JLT");
+            break;
+
         case A_LT:
-            writeLogical(arithType);
+            writeLogical("JGT");
+            break;
+
+        case A_AND:
+            writeTwoInputOp("&");
+            break;
+
+        case A_OR:
+            writeTwoInputOp("|");
+            break;
+
+        case A_NOT:
+            writeOneInputOp("!");
             break;
     }
 }
 
+void writeOneInputOp(const char* op)
+{
+    writeAt("SP");
+    writeAssignment("A", "M-1");
 
-void writeLogical(const ArithType arithType)
+    //TODO
+    //writeAssignment("M", "-M");
+    fputs("M=", fWRITE);
+    fputs(op, fWRITE);
+    fputs("M\n", fWRITE);
+}
+
+void writeTwoInputOp(const char* op)
+{
+    // save y into D
+    writeAt("SP");
+
+    // decrement the SP here since the result only occupies 1 from 2
+    writeAssignment("M", "M-1");
+    writeAssignment("A", "M");
+    writeAssignment("D", "M");
+
+    // add D (y) to x
+    writeAssignment("A", "A-1");
+    //TODO
+    //writeAssignment("M", "M+D");
+    fputs("M=M", fWRITE);
+    fputs(op, fWRITE);
+    fputs("D\n", fWRITE);
+}
+
+
+void writeLogical(const char* jump)
 {
     static int inc = 0;
 
@@ -207,19 +259,7 @@ void writeLogical(const ArithType arithType)
     // D = y - x
     writeAssignment("D", "D-M");
 
-    //switch here
-    switch(arithType)
-    {
-        case A_EQ:
-            writeJump(buff, "D", "JEQ");
-            break;
-        case A_GT:
-            writeJump(buff, "D", "JLT");
-            break;
-        case A_LT:
-            writeJump(buff, "D", "JGT");
-            break;
-    }
+    writeJump(buff, "D", jump);
 
     //DIDNTJUMP: set to 0 (FALSE)
     writeAssignment("D", "0");

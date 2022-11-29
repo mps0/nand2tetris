@@ -53,17 +53,19 @@ int main(int argc, char* argv[])
         printf("Could not open file %s\n", argv[1]);
         return -1;
     }
-    char name[extensionLoc + 2];
-    memcpy(name, argv[1], extensionLoc) ;
 
-    fWRITE= fopen(strcat(name, ".asm"), "w");
+    char name[extensionLoc + 5];
+    memcpy(name, argv[1], extensionLoc) ;
+    name[extensionLoc] = '\0';
+
+    fWRITE = fopen(strcat(name, ".asm"), "w");
     if(!fWRITE)
     {
         printf("Could not create output machine code file!\n");
         return -1;
     }
 
-    init();
+    //init();
     while(hasMoreLines())
     {
         advance();

@@ -7,6 +7,10 @@
 #include "common.h"
 
 #define BASE_STACK_ADDRESS_STRING "256"
+//#define BASE_LCL_ADDRESS_STRING ""
+//#define BASE_ARG_ADDRESS_STRING ""
+//#define BASE_THIS_ADDRESS_STRING ""
+//#define BASE_THAT_ADDRESS_STRING ""
 
 typedef enum
 {
@@ -36,9 +40,11 @@ void writePush(const Command command);
 void writePop(const Command command);
 void writeAt(const char* addr);
 void writeAssignment(const char* lh, const char* rh);
-void writeLogical(const ArithType arithType);
+void writeLogical(const char* jump);
 void writeLabel(const char* label);
 void writeJump(const char* label, const char* cond, const char* jump);
+void writeOneInputOp(const char* op);
+void writeTwoInputOp(const char* op);
 
 ArithType getArithType(const Command command);
 

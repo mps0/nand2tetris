@@ -30,7 +30,7 @@ bool hasMoreLines()
     }
 
     return true;
-};
+}
 
 void advance()
 {
@@ -78,7 +78,7 @@ Command getCurrentCommand()
     }
     command[n] = '\0';
 
-    Command currCommand = {};
+    Command currCommand;
     currCommand.type = getCommandTypeFromString(command);
 
     //get args (if needed)
@@ -100,7 +100,29 @@ Command getCurrentCommand()
                     n++;
                 }
                 currCommand.arg1[n] = '\0';
+                if(strcmp(currCommand.arg1, "local") == 0)
+                {
+                    memcpy(currCommand.arg1, "LCL", 4);
+                }
 
+                else if(strcmp(currCommand.arg1, "argument") == 0)
+                {
+                    memcpy(currCommand.arg1, "ARG", 4);
+                }
+
+                else if(strcmp(currCommand.arg1, "this") == 0)
+                {
+                    memcpy(currCommand.arg1, "THIS", 5);
+                }
+
+                else if(strcmp(currCommand.arg1, "that") == 0)
+                {
+                    memcpy(currCommand.arg1, "THAT", 5);
+                }
+                else if(strcmp(currCommand.arg1, "temp") == 0)
+                {
+                    memcpy(currCommand.arg1, "TEMP", 5);
+                }
                 n = 0;
                 c = getc(fREAD);
                 char arg2[7]; // big enough to fit smallest 16bit int
