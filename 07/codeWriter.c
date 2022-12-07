@@ -207,11 +207,9 @@ void writeOneInputOp(const char* op)
     writeAt("SP");
     writeAssignment("A", "M-1");
 
-    //TODO
-    //writeAssignment("M", "-M");
-    fputs("M=", fWRITE);
-    fputs(op, fWRITE);
-    fputs("M\n", fWRITE);
+    char buf[6];
+    sprintf(buf, "%sM\n", op);
+    writeAssignment("M", buf);
 }
 
 void writeTwoInputOp(const char* op)
@@ -228,9 +226,13 @@ void writeTwoInputOp(const char* op)
     writeAssignment("A", "A-1");
     //TODO
     //writeAssignment("M", "M+D");
-    fputs("M=M", fWRITE);
-    fputs(op, fWRITE);
-    fputs("D\n", fWRITE);
+    //fputs("M=M", fWRITE);
+    //fputs(op, fWRITE);
+    //fputs("D\n", fWRITE);
+
+    char buf[8];
+    sprintf(buf, "M%sD\n", op);
+    writeAssignment("M", buf);
 }
 
 
@@ -238,10 +240,8 @@ void writeLogical(const char* jump)
 {
     static int inc = 0;
 
-    //TODO
     char buff[32];
     createIncLabel("TRUE", buff, inc);
-    //TODO
     char buff2[32];
     createIncLabel("TRUERETURN", buff2, inc);
 
@@ -299,7 +299,6 @@ void writeLabel(const char* label)
 
 void writeAt(const char* addr)
 {
-    //fputs(strcat("@", addr), fWRITE);
     fputs("@", fWRITE);
     fputs(addr, fWRITE);
     fputs("\n", fWRITE);
