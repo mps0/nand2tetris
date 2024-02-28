@@ -2,12 +2,15 @@
 
 #define MAX_STR_LENGTH 256
 
-//pointers
+// pointers
 #define SP 0
 #define LCL 1
 #define ARG 2
 #define THIS 3
 #define THAT 4
+
+// locations
+#define TEMP 5
 
 #pragma once
 typedef enum
@@ -29,6 +32,7 @@ typedef struct
     CommandType type;
     char arg1[9]; //fits "constant"
     int arg2;
+    char fname[MAX_STR_LENGTH];
 } Command;
 
 

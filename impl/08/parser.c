@@ -37,13 +37,18 @@ void advance()
     bool goToNextLine = false;
 
     char c = getc(fREAD);
-    if (c == '/' && peek()  == '/')
+
+    while(isspace(c) != 0)
     {
-        goToNextLine = true;
+        if(c == '\n')
+        {
+            goToNextLine = true;
+            break;
+        }
+        c = getc(fREAD);
     }
-    // can assume the VM code doesn't have leading spaces
-    // since it's generated, so just skip these lines.
-    else if(isspace(c) != 0)
+
+    if (c == '/' && peek() == '/')
     {
         goToNextLine = true;
     }
@@ -54,6 +59,7 @@ void advance()
         {
             c = getc(fREAD);
         }
+
         if(hasMoreLines())
         {
             advance();
@@ -65,20 +71,12 @@ void advance()
 
 Command getCurrentCommand()
 {
-    char c = getc(fREAD);
-
     //get command
-    char command[7]; //fits "return"
-    int n = 0;
-    while(c != ' ' && c != '\n')
-    {
-        command[n] = c;
-        c = getc(fREAD);
-        n++;
-    }
-    command[n] = '\0';
+    char command[8]; //fits "function"
+    readNextWord(command);
 
     Command currCommand;
+    //printf("command: %s\n", command);
     currCommand.type = getCommandTypeFromString(command);
 
     //get args (if needed)
@@ -91,15 +89,8 @@ Command getCurrentCommand()
         case C_PUSH:
         case C_POP:
             {
-                n = 0;
-                c = getc(fREAD);
-                while(c != ' ')
-                {
-                    currCommand.arg1[n] = c;
-                    c = getc(fREAD);
-                    n++;
-                }
-                currCommand.arg1[n] = '\0';
+                readNextWord(currCommand.arg1);
+
                 if(strcmp(currCommand.arg1, "local") == 0)
                 {
                     memcpy(currCommand.arg1, "LCL", 4);
@@ -123,19 +114,19 @@ Command getCurrentCommand()
                 {
                     memcpy(currCommand.arg1, "TEMP", 5);
                 }
-                n = 0;
-                c = getc(fREAD);
                 char arg2[7]; // big enough to fit smallest 16bit int
-                while(c != '\n')
-                {
-                    arg2[n] = c;
-                    c = getc(fREAD);
-                    n++;
-                }
-                arg2[n] = '\0';
+                readNextWord(arg2);
                 currCommand.arg2 = atoi(arg2);
                 break;
             }
+
+        case C_LABEL:
+        case C_FUNCTION:
+        case C_GOTO:
+            readNextWord(currCommand.fname);
+            break;
+
+
     }
 
     return currCommand;
@@ -163,6 +154,15 @@ CommandType getCommandTypeFromString(char* command)
       )
         return C_ARITHEMATIC;
 
+    if(strcmp("label", command) == 0)
+        return C_LABEL;
+
+    if(strcmp("function", command) == 0)
+        return C_FUNCTION;
+
+    if(strcmp("if-goto", command) == 0)
+        return C_GOTO;
+
     return C_UNDEFINED;
 }
 
@@ -189,7 +189,6 @@ void writeCommandAsComment(Command command)
                 fputs(" ", fWRITE);
                 char buff[7];
                 sprintf(buff, "%d", command.arg2);
-                //fputs(itoa(command.arg2, buff, 10), fWRITE);
                 fputs(buff, fWRITE);
                 break;
             }
@@ -201,10 +200,51 @@ void writeCommandAsComment(Command command)
                 fputs(" ", fWRITE);
                 char buff[7];
                 sprintf(buff, "%d", command.arg2);
-                //fputs(itoa(command.arg2, buff, 10), fWRITE);
                 fputs(buff, fWRITE);
+                break;
+            }
+        case C_LABEL:
+            {
+                fputs("label", fWRITE);
+                fputs(" ", fWRITE);
+                fputs(command.fname, fWRITE);
+                break;
+            }
+        case C_FUNCTION:
+            {
+                fputs("function", fWRITE);
+                fputs(" ", fWRITE);
+                fputs(command.fname, fWRITE);
+                break;
+            }
+        case C_GOTO:
+            {
+                fputs("if-goto", fWRITE);
+                fputs(" ", fWRITE);
+                fputs(command.fname, fWRITE);
                 break;
             }
     }
     fputs("\n", fWRITE);
 }
+
+void readNextWord(char* buff)
+{
+    char c = getc(fREAD);
+
+    while(c == ' ')
+    {
+        c = getc(fREAD);
+    }
+
+    //get command
+    int n = 0;
+    while(isspace(c) == 0)
+    {
+        buff[n] = c;
+        c = getc(fREAD);
+        n++;
+    }
+    buff[n] = '\0';
+}
+

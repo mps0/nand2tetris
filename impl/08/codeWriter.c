@@ -106,34 +106,55 @@ void writePop(const Command command)
     //save the value into D
     writeAssignment("D", "M");
 
-    if(command.arg2 == 0)
+    //non pointer //TODO static
+    if(strcmp(command.arg1, "temp") == 0)
     {
-        writeAt(command.arg1);
-        writeAssignment("A", "M");
+        int loc = TEMP + command.arg2;
+        char buff[MAX_STR_LENGTH];
+        sprintf(buff, "%d", loc);
+        writeAt(buff);
         writeAssignment("M","D");
     }
+    else if(strcmp(command.arg1, "R13") == 0
+            || strcmp(command.arg1, "R14") == 0
+            || strcmp(command.arg1, "R15") == 0)
+    {
+        writeAt(command.arg1);
+        writeAssignment("M","D");
+    }
+
+    // pointers
     else
     {
-        //Save the value into R13
-        writeAt("R13");
-        writeAssignment("M","D");
-        char buff[100];
-        //itoa(command.arg2, buff, 10);
-        sprintf(buff, "%d", command.arg2);
-        // Save address into R14
-        writeAt(buff);
-        writeAssignment("D","A");
-        writeAt(command.arg1);
-        writeAssignment("D", "D+M");
-        writeAt("R14");
-        writeAssignment("M","D");
+        if(command.arg2 == 0)
+        {
+            writeAt(command.arg1);
+            writeAssignment("A", "M");
+            writeAssignment("M","D");
+        }
+        else
+        {
+            //Save the value into R13
+            writeAt("R13");
+            writeAssignment("M","D");
+            char buff[100];
+            //itoa(command.arg2, buff, 10);
+            sprintf(buff, "%d", command.arg2);
+            // Save address into R14
+            writeAt(buff);
+            writeAssignment("D","A");
+            writeAt(command.arg1);
+            writeAssignment("D", "D+M");
+            writeAt("R14");
+            writeAssignment("M","D");
 
-        // Save value into segment + index
-        writeAt("R13");
-        writeAssignment("D", "M");
-        writeAt("R14");
-        writeAssignment("A","M");
-        writeAssignment("M","D");
+            // Save value into segment + index
+            writeAt("R13");
+            writeAssignment("D", "M");
+            writeAt("R14");
+            writeAssignment("A","M");
+            writeAssignment("M","D");
+        }
     }
 }
 
@@ -304,6 +325,9 @@ void writeJump(const char* label, const char* cond, const char* jump)
 
 void writeLabel(const char* label)
 {
+    printf("WRITING LABEL: %s\n", label);
+    printf("LENGHT LABEL: %d\n", strlen(label));
+
     fputs("(", fWRITE);
     fputs(label, fWRITE);
     fputs(")\n", fWRITE);
@@ -329,13 +353,15 @@ void writeGoto(const char* label)
     writeJump(label, "0", "JMP");
 }
 
-// true is -1
+// true is anything not 0
 // false is 0
 void writeIf(const char* label)
 {
-    // jumps if D is -1
-    writeAssignment("D", "D+1");
-    writeJump(label, "D", "JEQ");
+    //pop value from stack
+    Command command0 = {C_POP, "R13", 0};
+    writePop(command0);
+    writeAt("R13");
+    writeJump(label, "M", "JNE");
 }
 
 void writeFunction(const char* name, const int nVars)

@@ -66,6 +66,7 @@ int main(int argc, char* argv[])
     }
 
     //init();
+    bool run = hasMoreLines();
     while(hasMoreLines())
     {
         advance();
@@ -84,6 +85,16 @@ int main(int argc, char* argv[])
             case C_POP:
                 writePushPop(currCommand);
                 break;
+
+            case C_LABEL:
+                writeLabel(currCommand.fname);
+                break;
+
+            case C_GOTO:
+                writeIf(currCommand.fname);
+
+            //case C_FUNCTION:
+            //    writeFunction();
 
         }
     }

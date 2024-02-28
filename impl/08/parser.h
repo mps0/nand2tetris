@@ -24,3 +24,6 @@ Command getCurrentCommand();
 CommandType commandType();
 CommandType getCommandTypeFromString(char* command);
 void writeCommandAsComment(Command command);
+
+
+void readNextWord(char* buff);
