@@ -33,7 +33,7 @@ typedef struct
     char arg1[9]; //fits "constant"
     int arg2;
     char fname[MAX_STR_LENGTH];
-    int isPointer;
+    int followPointer;
 } Command;
 
 

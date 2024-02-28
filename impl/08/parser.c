@@ -93,42 +93,51 @@ Command getCurrentCommand()
                 char arg2[7]; // big enough to fit smallest 16bit int
                 readNextWord(arg2);
                 currCommand.arg2 = atoi(arg2);
-                currCommand.isPointer = 0;
+                currCommand.followPointer = 0;
 
                 if(strcmp(currCommand.arg1, "local") == 0)
                 {
                     memcpy(currCommand.arg1, "LCL", 4);
-                    currCommand.isPointer = 1;
+                    currCommand.followPointer = 1;
                 }
 
                 else if(strcmp(currCommand.arg1, "argument") == 0)
                 {
                     memcpy(currCommand.arg1, "ARG", 4);
-                    currCommand.isPointer = 1;
+                    currCommand.followPointer = 1;
                 }
 
                 else if(strcmp(currCommand.arg1, "this") == 0)
                 {
                     memcpy(currCommand.arg1, "THIS", 5);
-                    currCommand.isPointer = 1;
+                    currCommand.followPointer = 1;
                 }
 
                 else if(strcmp(currCommand.arg1, "that") == 0)
                 {
                     memcpy(currCommand.arg1, "THAT", 5);
-                    currCommand.isPointer = 1;
+                    currCommand.followPointer = 1;
                 }
 
                 else if(strcmp(currCommand.arg1, "temp") == 0)
                 {
                     memcpy(currCommand.arg1, "TEMP", 5);
-                    currCommand.isPointer = 1;
+                    currCommand.followPointer = 1;
                 }
 
                 else if(strcmp(currCommand.arg1, "pointer") == 0)
                 {
-                    memcpy(currCommand.arg1, "POINTER", 8);
-                    currCommand.isPointer = 1;
+                    if(currCommand.arg2 == 0)
+                    {
+                        memcpy(currCommand.arg1, "THIS", 5);
+                    }
+                    if(currCommand.arg2 == 1)
+                    {
+                        memcpy(currCommand.arg1, "THAT", 5);
+                        currCommand.arg2 = 0;
+                        printf("SETTIN ARG2 TO 0\n");
+                    }
+                    currCommand.followPointer= 0;
                 }
                 break;
             }

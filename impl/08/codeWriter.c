@@ -67,32 +67,42 @@ void writePush(const Command command)
     }
     else
     {
-        if(command.arg2 == 0)
-        {
-            // go to segment
-            writeAt(command.arg1);
-            writeAssignment("A", "M");
-            // copy value
-            writeAssignment("D", "M");
-        }
-        else
-        {
-            char buff[100];
-            //itoa(command.arg2, buff, 10);
-            sprintf(buff, "%d", command.arg2);
-            writeAt(buff);
-            writeAssignment("D","A");
-            writeAt(command.arg1);
-            writeAssignment("D", "D+M");
-            writeAssignment("A", "D");
-            writeAssignment("D", "M");
-        }
+            if(command.arg2 == 0)
+            {
+                // go to segment
+                writeAt(command.arg1);
+                if(command.followPointer == 1)
+                {
+                    writeAssignment("A", "M");
+                }
+                // copy value
+                writeAssignment("D", "M");
+            }
+            else
+            {
+                char buff[100];
+                //itoa(command.arg2, buff, 10);
+                sprintf(buff, "%d", command.arg2);
+                writeAt(buff);
+                writeAssignment("D","A");
+                writeAt(command.arg1);
+                if(command.followPointer == 1)
+                {
+                    writeAssignment("D", "D+M");
+                }
+                else
+                {
+                    writeAssignment("D", "D+A");
+                }
+                writeAssignment("A", "D");
+                writeAssignment("D", "M");
+            }
 
-        //push onto stack
-        writeAt("SP");
-        writeAssignment("M", "M+1");
-        writeAssignment("A", "M-1");
-        writeAssignment("M", "D");
+            //push onto stack
+            writeAt("SP");
+            writeAssignment("M", "M+1");
+            writeAssignment("A", "M-1");
+            writeAssignment("M", "D");
     }
 }
 
@@ -106,94 +116,71 @@ void writePop(const Command command)
     //save the value into D
     writeAssignment("D", "M");
 
-    //if(strcmp(command.arg1, "POINTER") != 0)
-    if(command.isPointer == 1)
+    if(command.followPointer == 1)
     {
-        if(strcmp(command.arg1, "POINTER") == 0)
+        int base = 0;
+        if(strcmp(command.arg1, "THIS") == 0)
+            base = THIS;
+        else if(strcmp(command.arg1, "THAT") == 0)
+            base = THAT;
+        else if(strcmp(command.arg1, "LCL") == 0)
+            base = LCL;
+        else if(strcmp(command.arg1, "ARG") == 0)
+            base = ARG;
+
+        writeAt(command.arg1);
+        if(command.arg2 == 0)
         {
-            if(command.arg2 == 0)
-            {
-                writeAt("THIS");
-            }
-            else if(command.arg2 == 1)
-            {
-                writeAt("THAT");
-            }
+            writeAssignment("A", "M");
         }
         else
         {
-            int base = 0;
-            if(strcmp(command.arg1, "temp") == 0)
-                base = TEMP;
-            else if(strcmp(command.arg1, "THIS") == 0)
-                base = THIS;
-            else if(strcmp(command.arg1, "THAT") == 0)
-                base = THAT;
-            else if(strcmp(command.arg1, "LCL") == 0)
-                base = LCL;
-            else if(strcmp(command.arg1, "ARG") == 0)
-                base = ARG;
+            //Save the value into R13
+            writeAt("R13");
+            writeAssignment("M","D");
+            char buff[100];
+            //itoa(command.arg2, buff, 10);
+            sprintf(buff, "%d", command.arg2);
+            // Save address into R14
+            writeAt(buff);
+            writeAssignment("D","A");
+            writeAt(command.arg1);
+            writeAssignment("D", "D+M");
+            writeAt("R14");
+            writeAssignment("M","D");
 
-            if(base == 0)
-            {
-                writeAt(command.arg1);
-            }
-            else
-            {
-                int loc = base + command.arg2;
-                char buff[MAX_STR_LENGTH];
-                sprintf(buff, "%d", loc);
-                writeAt(buff);
-            }
-            writeAssignment("A", "M");
+            // Save value into segment + index
+            writeAt("R13");
+            writeAssignment("D", "M");
+            writeAt("R14");
+            writeAssignment("A","M");
         }
     }
     else
     {
-        writeAt(command.arg1);
+        int base = 0;
+        if(strcmp(command.arg1, "temp") == 0)
+            base = TEMP;
+        else if(strcmp(command.arg1, "R13") == 0)
+            base = 13;
+        else if(strcmp(command.arg1, "R14") == 0)
+            base = 14;
+        else if(strcmp(command.arg1, "R15") == 0)
+            base = 15;
+
+        if(command.arg2 == 0)
+        {
+            writeAt(command.arg1);
+        }
+        else
+        {
+            int loc = base + command.arg2;
+            char buff[MAX_STR_LENGTH];
+            sprintf(buff, "%d", loc);
+            writeAt(buff);
+        }
     }
     writeAssignment("M","D");
-    // pointers
-    //else
-    //{
-    //    if(command.arg2 == 0)
-    //    {
-    //        writeAt("THIS");
-    //    }
-    //    else if(command.arg2 == 1)
-    //    {
-    //        writeAt("THAT");
-    //    }
-    //    writeAssignment("M", "D");
-    //    //if(command.arg2 == 0)
-    //    //{
-    //    //    writeAt(command.arg1);
-    //    //    writeAssignment("A", "M");
-    //    //}
-    //    //else
-    //    //{
-    //    //    //Save the value into R13
-    //    //    writeAt("R13");
-    //    //    writeAssignment("M","D");
-    //    //    char buff[100];
-    //    //    //itoa(command.arg2, buff, 10);
-    //    //    sprintf(buff, "%d", command.arg2);
-    //    //    // Save address into R14
-    //    //    writeAt(buff);
-    //    //    writeAssignment("D","A");
-    //    //    writeAt(command.arg1);
-    //    //    writeAssignment("D", "D+M");
-    //    //    writeAt("R14");
-    //    //    writeAssignment("M","D");
-
-    //    //    // Save value into segment + index
-    //    //    writeAt("R13");
-    //    //    writeAssignment("D", "M");
-    //    //    writeAt("R14");
-    //    //    writeAssignment("A","M");
-    //    //    writeAssignment("M","D");
-    //    //}
-    //}
 }
 
 ArithType getArithType(const Command command)
@@ -395,11 +382,23 @@ void writeGoto(const char* label)
 // false is 0
 void writeIf(const char* label)
 {
-    //pop value from stack
-    Command command0 = {C_POP, "R13", 0};
-    writePop(command0);
-    writeAt("R13");
-    writeJump(label, "M", "JNE");
+    ////pop value from stack
+    //Command command0 = {C_POP, "R13", 0, 0};
+    //writePop(command0);
+    //writeAssignment("R13");
+    //writeJump(label, "M", "JNE");
+
+
+    writeAt("SP");
+    // decrement SP
+    writeAssignment("M", "M-1");
+    writeAssignment("A", "M");
+    //now at SP -1 (last number) address...
+    //save the value into D
+    writeAssignment("D", "M");
+    writeJump(label, "D", "JNE");
+
+
 }
 
 void writeFunction(const char* name, const int nVars)
