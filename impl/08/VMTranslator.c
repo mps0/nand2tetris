@@ -76,7 +76,6 @@ int main(int argc, char* argv[])
 
         switch(currCommand.type)
         {
-
             case C_ARITHEMATIC:
                 writeArithmetic(currCommand);
                 break;
@@ -91,10 +90,15 @@ int main(int argc, char* argv[])
                 break;
 
             case C_GOTO:
-                writeIf(currCommand.fname);
+                writeGoto(currCommand.fname);
+                break;
 
-            //case C_FUNCTION:
-            //    writeFunction();
+            case C_IF:
+                writeIf(currCommand.fname);
+                break;
+
+                //case C_FUNCTION:
+                //    writeFunction();
 
         }
     }
