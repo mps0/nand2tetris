@@ -135,7 +135,6 @@ Command getCurrentCommand()
                     {
                         memcpy(currCommand.arg1, "THAT", 5);
                         currCommand.arg2 = 0;
-                        printf("SETTIN ARG2 TO 0\n");
                     }
                     currCommand.followPointer= 0;
                 }
@@ -143,11 +142,21 @@ Command getCurrentCommand()
             }
 
         case C_LABEL:
-        case C_FUNCTION:
         case C_GOTO:
         case C_IF:
             readNextWord(currCommand.fname);
             break;
+
+        case C_FUNCTION:
+            {
+                readNextWord(currCommand.fname);
+                char arg2[7]; // big enough to fit smallest 16bit int
+                readNextWord(arg2);
+                currCommand.arg2 = atoi(arg2);
+                break;
+            }
+        case C_RETURN:
+                break;
     }
 
     return currCommand;
@@ -186,6 +195,9 @@ CommandType getCommandTypeFromString(char* command)
 
     if(strcmp("if-goto", command) == 0)
         return C_IF;
+
+    if(strcmp("return", command) == 0)
+        return C_RETURN;
 
     return C_UNDEFINED;
 }
@@ -227,34 +239,34 @@ void writeCommandAsComment(Command command)
                 fputs(buff, fWRITE);
                 break;
             }
+
         case C_LABEL:
-            {
                 fputs("label", fWRITE);
                 fputs(" ", fWRITE);
                 fputs(command.fname, fWRITE);
                 break;
-            }
+
         case C_FUNCTION:
-            {
                 fputs("function", fWRITE);
                 fputs(" ", fWRITE);
                 fputs(command.fname, fWRITE);
                 break;
-            }
+
         case C_GOTO:
-            {
                 fputs("goto", fWRITE);
                 fputs(" ", fWRITE);
                 fputs(command.fname, fWRITE);
                 break;
-            }
+
         case C_IF:
-            {
                 fputs("if-goto", fWRITE);
                 fputs(" ", fWRITE);
                 fputs(command.fname, fWRITE);
                 break;
-            }
+
+        case C_RETURN:
+                fputs("return", fWRITE);
+            break;
     }
     fputs("\n", fWRITE);
 }
@@ -270,7 +282,7 @@ void readNextWord(char* buff)
 
     //get command
     int n = 0;
-    while(isspace(c) == 0)
+    while(c != EOF && isspace(c) == 0)
     {
         buff[n] = c;
         c = getc(fREAD);

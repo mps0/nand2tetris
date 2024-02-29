@@ -14,11 +14,6 @@ int main(int argc, char* argv[])
         printf("No VM file provided\n");
         return -1;
     }
-    else if (argc > 2)
-    {
-        printf("Too many input arguments\n");
-        return -1;
-    }
 
     char* pc = argv[1];
     bool extensionFound = false;
@@ -97,8 +92,13 @@ int main(int argc, char* argv[])
                 writeIf(currCommand.fname);
                 break;
 
-                //case C_FUNCTION:
-                //    writeFunction();
+            case C_FUNCTION:
+                writeFunction(currCommand.fname, currCommand.arg2);
+                break;
+
+            case C_RETURN:
+                writeReturn();
+                break;
 
         }
     }

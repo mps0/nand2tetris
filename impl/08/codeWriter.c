@@ -475,21 +475,20 @@ void writeReturn()
     writeAt("R14");
     writeAssignment("M", "D");
 
-    Command command0 = {C_PUSH, "R14", 0};
-    writePush(command0);
-    Command command1 = {C_PUSH, "constant", 5};
-    writePush(command1);
-    writeTwoInputOp("-");
+    //Command command0 = {C_PUSH, "R14", 0};
+    //writePush(command0);
+    //Command command1 = {C_PUSH, "constant", 5};
+    //writePush(command1);
+    //writeTwoInputOp("-");
 
-    Command command2 = {C_POP, "R15", 0};
-    writePop(command2);
+    //Command command2 = {C_POP, "R15", 0};
+    //writePop(command2);
 
-    writeAt("R15");
-    writeAssignment("D", "M");
+    //writeAt("R15");
+    //writeAssignment("D", "M");
 
-    writeAt("ARG");
-    writeAssignment("A", "M");
-    writeAssignment("M", "D");
+    Command command0 = {C_POP, "ARG", 0, "", 1};
+    writePop(command0);
 
     writeAt("ARG");
     writeAssignment("D", "M");
